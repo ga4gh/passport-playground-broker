@@ -1,0 +1,62 @@
+###########################################################################
+#######             FOR DEMONSTRATION PURPOSES ONLY                 #######
+###########################################################################
+# Adapted from ory/hydra quickstart.yml (v26.2.0), using published images
+# instead of a local build so the hydra repo is not required.
+services:
+  sqlite:
+    image: busybox
+    volumes:
+      - hydra-sqlite:/mnt/sqlite
+    command: "chmod -R 777 /mnt/sqlite"
+  hydra:
+    image: oryd/hydra:v26.2.0
+    ports:
+      - "4444:4444" # Public port
+      - "4445:4445" # Admin port
+      - "5555:5555" # Port for hydra token user
+    command: serve -c /etc/config/hydra/hydra.yml all --dev
+    volumes:
+      - hydra-sqlite:/mnt/sqlite:rw
+      - type: bind
+        source: ./config
+        target: /etc/config/hydra
+    pull_policy: missing
+    environment:
+      - DSN=sqlite:///mnt/sqlite/db.sqlite?_fk=true&mode=rwc
+    restart: unless-stopped
+    depends_on:
+      hydra-migrate:
+        condition: service_completed_successfully
+    networks:
+      - intranet
+  hydra-migrate:
+    image: oryd/hydra:v26.2.0
+    environment:
+      - DSN=sqlite:///mnt/sqlite/db.sqlite?_fk=true&mode=rwc
+    command: migrate -c /etc/config/hydra/hydra.yml sql up -e --yes
+    pull_policy: missing
+    volumes:
+      - hydra-sqlite:/mnt/sqlite:rw
+      - type: bind
+        source: ./config
+        target: /etc/config/hydra
+    restart: on-failure
+    networks:
+      - intranet
+    depends_on:
+      sqlite:
+        condition: service_completed_successfully
+  consent:
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+    image: oryd/hydra-login-consent-node:v26.2.0
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - intranet
+networks:
+  intranet:
+volumes:
+  hydra-sqlite:

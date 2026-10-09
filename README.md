@@ -12,23 +12,23 @@ Prerequisites: docker, jq
 
 Run Ory Hydra and create a passport broker client.
 
-1. Clone ory/hydra locally.
-
-2. Start OIDC provider.
+1. Start OIDC provider.
 
 ```sh
-# from ory/hydra root directory
-docker compose -f quickstart.yml up
+# from this repository root
+docker compose up
 ```
 
-3. Create clients, adding the ga4gh_passport_v1 scope
+2. Create clients, adding the ga4gh_passport_v1 scope
 
-4. Stop and destroy the broker.
+3. Stop and destroy the broker.
 
 ```sh
-docker compose -f quickstart.yml kill
-docker compose -f quickstart.yml rm -f -v
+docker compose down -v
 ```
+
+`compose.yml` is adapted from ory/hydra's `quickstart.yml`, using published
+images instead of a local build. Hydra config lives in `config/hydra.yml`.
 
 ## Stack
 
